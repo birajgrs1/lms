@@ -8,9 +8,23 @@
   ],
   "routes": [
     {
-      "src": "/(.*)",
+      "src": "/api/(.*)",
+      "dest": "/api/server.js"
+    },
+    {
+      "src": "/clerk",
       "dest": "/api/server.js",
-      "methods": ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS", "HEAD"]
+      "methods": ["POST"]
+    },
+    {
+      "src": "/stripe",
+      "dest": "/api/server.js",
+      "methods": ["POST"]
+    },
+    {
+      "src": "/health",
+      "dest": "/api/server.js",
+      "methods": ["GET"]
     }
   ],
   "functions": {
@@ -18,8 +32,5 @@
       "maxDuration": 30,
       "memory": 1024
     }
-  },
-  "env": {
-    "NODE_ENV": "production"
   }
 }
