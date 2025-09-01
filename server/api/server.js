@@ -10,38 +10,40 @@ import connectCloudinary from "../config/cloudinary.js";
 import userRouter from "../routes/userRoutes.js";
 import multer from "multer";
 
-// Initialize dotenv
 dotenv.config();
 
 const app = express();
 
-// Webhook endpoints first (before body parsing middleware)
+// Webhook endpoints
 app.post("/stripe", express.raw({ type: "application/json" }), stripeWebHooks);
 app.post("/clerk", express.raw({ type: "application/json" }), clerkWebHooks);
 
 // Middlewares
-app.use(cors({
-  origin: process.env.NODE_ENV === 'production' 
-    ? ["https://lms-frontend-gray-kappa.vercel.app"] 
-    : ["http://localhost:5173"],
-  credentials: true
-}));
+app.use(
+  cors({
+    origin:
+      process.env.NODE_ENV === "production"
+        ? ["https://lms-frontend-gray-kappa.vercel.app"]
+        : ["http://localhost:5173"],
+    credentials: true,
+  })
+);
 
-app.use(express.json({ limit: '10mb' }));
+app.use(express.json({ limit: "10mb" }));
 app.use(clerkMiddleware());
 
 // Service initialization
 let servicesInitialized = false;
 const initializeServices = async () => {
   if (servicesInitialized) return;
-  
+
   try {
     await dbConnect();
     await connectCloudinary();
-    console.log(" Services initialized");
+    console.log("Services initialized");
     servicesInitialized = true;
   } catch (err) {
-    console.error(" Service initialization failed:", err.message);
+    console.error("Service initialization failed:", err.message);
     throw err;
   }
 };
@@ -54,17 +56,17 @@ app.use(async (req, res, next) => {
     console.error("Service initialization error:", error);
     res.status(503).json({
       success: false,
-      message: "Service temporarily unavailable. Please try again."
+      message: "Service temporarily unavailable. Please try again.",
     });
   }
 });
 
 // Routes
 app.get("/", (req, res) => {
-  res.json({ 
-    success: true, 
+  res.json({
+    success: true,
     message: "Server is running...",
-    timestamp: new Date().toISOString()
+    timestamp: new Date().toISOString(),
   });
 });
 
@@ -72,43 +74,33 @@ app.use("/api/educator", educatorRouter);
 app.use("/api/course", courseRouter);
 app.use("/api/user", userRouter);
 
-// Health check endpoint
 app.get("/health", (req, res) => {
-  res.json({ 
-    status: "OK", 
-    timestamp: new Date().toISOString()
-  });
+  res.json({ status: "OK", timestamp: new Date().toISOString() });
 });
 
-// Error handling middleware
+// Error handling
 app.use((error, req, res, next) => {
   console.error("Error stack:", error.stack);
-
   if (error instanceof multer.MulterError) {
     if (error.code === "LIMIT_FILE_SIZE") {
-      return res.status(400).json({
-        success: false,
-        message: "File too large. Maximum size is 5MB.",
-      });
+      return res
+        .status(400)
+        .json({ success: false, message: "File too large. Max size 5MB." });
     }
-    return res.status(400).json({
-      success: false,
-      message: `File upload error: ${error.message}`,
-    });
+    return res
+      .status(400)
+      .json({ success: false, message: `File upload error: ${error.message}` });
   }
-
-  res.status(500).json({
-    success: false,
-    message: process.env.NODE_ENV === 'production' 
-      ? "Internal server error" 
-      : error.message,
-  });
+  res
+    .status(500)
+    .json({
+      success: false,
+      message:
+        process.env.NODE_ENV === "production"
+          ? "Internal server error"
+          : error.message,
+    });
 });
 
-// Start the server
-const port = process.env.PORT || 5000;
-app.listen(port, () => {
-  console.log(`Server is running on port ${port}`);
-});
-
+// Export the app as a Vercel serverless function
 export default app;
