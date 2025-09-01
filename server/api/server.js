@@ -6,12 +6,12 @@ import dbConnect from "../config/dbConnect.js";
 import { clerkWebHooks
 // , stripeWebHooks 
 } from "../controllers/webhooks.js";
-import educatorRouter from "../routes/educatorRoutes.js";
-import courseRouter from "../routes/courseRoutes.js";
+// import educatorRouter from "../routes/educatorRoutes.js";
+// import courseRouter from "../routes/courseRoutes.js";
 import { clerkMiddleware } from "@clerk/express";
 import connectCloudinary from "../config/cloudinary.js";
-import userRouter from "../routes/userRoutes.js";
-import multer from "multer";
+// import userRouter from "../routes/userRoutes.js";
+// import multer from "multer";
 
 dotenv.config();
 const app = express();
@@ -63,32 +63,32 @@ app.get("/", (req, res) => {
 });
 
 app.post("/clerk", clerkWebHooks);
-app.use("/api/educator", educatorRouter);
-app.use("/api/course", courseRouter);
-app.use("/api/user", userRouter);
+// app.use("/api/educator", educatorRouter);
+// app.use("/api/course", courseRouter);
+// app.use("/api/user", userRouter);
 
 // Error handling middleware
-app.use((error, req, res, next) => {
-  console.error("Error stack:", error.stack);
+// app.use((error, req, res, next) => {
+//   console.error("Error stack:", error.stack);
 
-  if (error instanceof multer.MulterError) {
-    if (error.code === "LIMIT_FILE_SIZE") {
-      return res.status(400).json({
-        success: false,
-        message: "File too large. Maximum size is 5MB.",
-      });
-    }
-    return res.status(400).json({
-      success: false,
-      message: `File upload error: ${error.message}`,
-    });
-  }
+//   if (error instanceof multer.MulterError) {
+//     if (error.code === "LIMIT_FILE_SIZE") {
+//       return res.status(400).json({
+//         success: false,
+//         message: "File too large. Maximum size is 5MB.",
+//       });
+//     }
+//     return res.status(400).json({
+//       success: false,
+//       message: `File upload error: ${error.message}`,
+//     });
+//   }
 
-  res.status(500).json({
-    success: false,
-    message: error.message || "Internal server error",
-  });
-});
+//   res.status(500).json({
+//     success: false,
+//     message: error.message || "Internal server error",
+//   });
+// });
 
 // Export for Vercel serverless functions
 export default app;
