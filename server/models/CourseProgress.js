@@ -1,3 +1,4 @@
+//models/CourseProgress.js
 import mongoose from "mongoose";
 
 const courseProgressSchema = new mongoose.Schema({

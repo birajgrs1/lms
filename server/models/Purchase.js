@@ -1,3 +1,4 @@
+// models/Purchase.js
 import mongoose from "mongoose";
 
 const purchaseSchema = new mongoose.Schema({

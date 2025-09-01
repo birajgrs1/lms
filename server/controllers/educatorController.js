@@ -1,3 +1,4 @@
+// controllers/educatorController.js
 import { clerkClient } from "@clerk/express";
 import User from "../models/User.js";
 import Course from "../models/Course.js";

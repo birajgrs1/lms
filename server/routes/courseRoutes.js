@@ -1,3 +1,4 @@
+//routes/courseRoutes.js
 import express from "express";
 import { getAllCourse, getCourseById } from "../controllers/courseController.js";
 
