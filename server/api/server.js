@@ -1,20 +1,21 @@
 import express from "express";
+import serverless from "serverless-http"; 
 import dotenv from "dotenv";
 import cors from "cors";
 import dbConnect from "../config/dbConnect.js";
-import { clerkWebHooks, stripeWebHooks } from "../controllers/webhooks.js";
+import connectCloudinary from "../config/cloudinary.js";
 import educatorRouter from "../routes/educatorRoutes.js";
 import courseRouter from "../routes/courseRoutes.js";
-import { clerkMiddleware } from "@clerk/express";
-import connectCloudinary from "../config/cloudinary.js";
 import userRouter from "../routes/userRoutes.js";
+import { clerkWebHooks, stripeWebHooks } from "../controllers/webhooks.js";
+import { clerkMiddleware } from "@clerk/express";
 import multer from "multer";
 
 dotenv.config();
 
 const app = express();
 
-// Webhook endpoints
+// Webhooks (before body parsing)
 app.post("/stripe", express.raw({ type: "application/json" }), stripeWebHooks);
 app.post("/clerk", express.raw({ type: "application/json" }), clerkWebHooks);
 
@@ -32,7 +33,7 @@ app.use(
 app.use(express.json({ limit: "10mb" }));
 app.use(clerkMiddleware());
 
-// Service initialization
+// Initialize services
 let servicesInitialized = false;
 const initializeServices = async () => {
   if (servicesInitialized) return;
@@ -40,53 +41,46 @@ const initializeServices = async () => {
   try {
     await dbConnect();
     await connectCloudinary();
-    console.log("Services initialized");
     servicesInitialized = true;
   } catch (err) {
-    console.error("Service initialization failed:", err.message);
+    console.error("Service initialization failed:", err);
     throw err;
   }
 };
 
+// Middleware to ensure services are initialized per request
 app.use(async (req, res, next) => {
   try {
     await initializeServices();
     next();
-  } catch (error) {
-    console.error("Service initialization error:", error);
-    res.status(503).json({
-      success: false,
-      message: "Service temporarily unavailable. Please try again.",
-    });
+  } catch (err) {
+    res
+      .status(503)
+      .json({ success: false, message: "Service temporarily unavailable" });
   }
 });
 
 // Routes
-app.get("/", (req, res) => {
+app.get("/", (req, res) =>
   res.json({
     success: true,
-    message: "Server is running...",
-    timestamp: new Date().toISOString(),
-  });
-});
+    message: "Server is running",
+    timestamp: new Date(),
+  })
+);
 
 app.use("/api/educator", educatorRouter);
 app.use("/api/course", courseRouter);
 app.use("/api/user", userRouter);
 
-app.get("/health", (req, res) => {
-  res.json({ status: "OK", timestamp: new Date().toISOString() });
-});
+app.get("/health", (req, res) =>
+  res.json({ status: "OK", timestamp: new Date() })
+);
 
 // Error handling
 app.use((error, req, res, next) => {
-  console.error("Error stack:", error.stack);
+  console.error(error.stack);
   if (error instanceof multer.MulterError) {
-    if (error.code === "LIMIT_FILE_SIZE") {
-      return res
-        .status(400)
-        .json({ success: false, message: "File too large. Max size 5MB." });
-    }
     return res
       .status(400)
       .json({ success: false, message: `File upload error: ${error.message}` });
@@ -102,5 +96,4 @@ app.use((error, req, res, next) => {
     });
 });
 
-// Export the app as a Vercel serverless function
-export default app;
+export default serverless(app);

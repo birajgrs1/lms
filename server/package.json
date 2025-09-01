@@ -27,6 +27,7 @@
     "express": "^5.1.0",
     "mongoose": "^8.18.0",
     "multer": "^2.0.2",
+    "serverless-http": "^4.0.0",
     "stripe": "^18.4.0",
     "svix": "^1.42.0"
   },
