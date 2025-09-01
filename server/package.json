@@ -6,10 +6,7 @@
   "type": "module",
   "scripts": {
     "start": "node api/server.js",
-    "dev": "nodemon api/server.js",
-    "vercel-build": "echo 'Building for Vercel'",
-    "build": "echo 'No build step required for Node.js backend'"
-
+    "dev": "nodemon api/server.js"
   },
     "keywords": ["lms", "education", "backend"],
   "author": "",
