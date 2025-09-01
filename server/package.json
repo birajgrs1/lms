@@ -6,8 +6,9 @@
   "type": "module",
   "scripts": {
     "start": "node api/server.js",
-    "dev": "nodemon api/server.js",
-   "build": "echo 'No build step needed'"
+  "dev": "nodemon api/server.js",
+  "vercel-build": "npm install --legacy-peer-deps"
+
     },
   "engines": {
     "node": ">=18.x"
