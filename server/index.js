@@ -1,4 +1,3 @@
-// index.js
 import app from "./api/server.js";
 import dotenv from "dotenv";
 
