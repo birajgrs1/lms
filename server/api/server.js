@@ -1,5 +1,5 @@
 import express from "express";
-import serverless from "serverless-http"; 
+import serverless from "serverless-http";
 import dotenv from "dotenv";
 import cors from "cors";
 import dbConnect from "../config/dbConnect.js";
@@ -33,46 +33,47 @@ app.use(
 app.use(express.json({ limit: "10mb" }));
 app.use(clerkMiddleware());
 
-// Initialize services
-let servicesInitialized = false;
-const initializeServices = async () => {
-  if (servicesInitialized) return;
+// Initialize services once (cold-start safe)
+let isDBConnected = false;
 
-  try {
+const initializeServicesOnce = async () => {
+  // Connect DB if not connected
+  if (!isDBConnected) {
     await dbConnect();
-    await connectCloudinary();
-    servicesInitialized = true;
-  } catch (err) {
-    console.error("Service initialization failed:", err);
-    throw err;
+    isDBConnected = true;
   }
+  // Cloudinary config (instant, no await needed)
+  connectCloudinary();
 };
 
-// Middleware to ensure services are initialized per request
+// Run initialization at cold start
+initializeServicesOnce().catch((err) => console.error("Initialization failed:", err));
+
+// Middleware to ensure DB is connected (non-blocking)
 app.use(async (req, res, next) => {
-  try {
-    await initializeServices();
-    next();
-  } catch (err) {
-    res
-      .status(503)
-      .json({ success: false, message: "Service temporarily unavailable" });
+  if (!isDBConnected) {
+    try {
+      await dbConnect();
+      isDBConnected = true;
+    } catch (err) {
+      return res
+        .status(503)
+        .json({ success: false, message: "Service temporarily unavailable" });
+    }
   }
+  next();
 });
 
 // Routes
 app.get("/", (req, res) =>
-  res.json({
-    success: true,
-    message: "Server is running",
-    timestamp: new Date(),
-  })
+  res.json({ success: true, message: "Server is running", timestamp: new Date() })
 );
 
 app.use("/api/educator", educatorRouter);
 app.use("/api/course", courseRouter);
 app.use("/api/user", userRouter);
 
+// Health check
 app.get("/health", (req, res) =>
   res.json({ status: "OK", timestamp: new Date() })
 );
@@ -90,9 +91,7 @@ app.use((error, req, res, next) => {
     .json({
       success: false,
       message:
-        process.env.NODE_ENV === "production"
-          ? "Internal server error"
-          : error.message,
+        process.env.NODE_ENV === "production" ? "Internal server error" : error.message,
     });
 });
 
