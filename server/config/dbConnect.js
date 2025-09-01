@@ -1,35 +1,39 @@
-// config/dbConnect.js
 import mongoose from "mongoose";
 
 let isConnected = false;
 
 const connectDB = async () => {
-  if (isConnected) return;
+  if (isConnected) {
+    console.log("✅ Using existing database connection");
+    return;
+  }
 
   try {
-    await mongoose.connect(process.env.MONGO_URI);
+    // Close any existing connection to prevent connection leaks
+    if (mongoose.connection.readyState !== 0) {
+      await mongoose.disconnect();
+    }
+    
+    await mongoose.connect(process.env.MONGO_URI, {
+      serverSelectionTimeoutMS: 5000,
+      socketTimeoutMS: 45000,
+    });
+    
     isConnected = true;
     console.log("✅ Database connected");
   } catch (error) {
     console.error("❌ DB connection error:", error.message);
+    throw error;
   }
 };
 
+// Handle graceful shutdown for serverless environments
+process.on('SIGTERM', async () => {
+  if (mongoose.connection.readyState !== 0) {
+    await mongoose.disconnect();
+    console.log('Database connection closed due to app termination');
+  }
+  process.exit(0);
+});
+
 export default connectDB;
-
-
-// import mongoose from "mongoose";
-// import dotenv from "dotenv";
-
-// dotenv.config();
-
-// const connectDB = async () => {
-//     try {
-//         await mongoose.connect(process.env.MONGO_URI);
-//         console.log("Database connected Successfully ...");
-//     } catch (error) {
-//         console.log(error);
-//     }
-// };
-
-// export default connectDB;

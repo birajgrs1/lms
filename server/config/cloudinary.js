@@ -1,6 +1,7 @@
 import { v2 as cloudinary } from 'cloudinary';
 
 const connectCloudinary = async () => {
+  // Check if already configured
   if (cloudinary.config().cloud_name) {
     return;
   }

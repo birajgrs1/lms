@@ -2,13 +2,17 @@
   "name": "server",
   "version": "1.0.0",
   "description": "LMS Project",
-  "main": "/api/server.js",
+  "main": "api/server.js",
   "type": "module",
   "scripts": {
     "start": "node api/server.js",
-    "dev": "nodemon api/server.js"
+    "dev": "nodemon api/server.js",
+    "vercel-build": "npm install"
   },
-    "keywords": ["lms", "education", "backend"],
+  "engines": {
+    "node": ">=18.x"
+  },
+  "keywords": ["lms", "education", "backend"],
   "author": "",
   "license": "ISC",
   "dependencies": {
