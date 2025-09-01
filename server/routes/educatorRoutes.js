@@ -1,4 +1,3 @@
-// educatorRoutes.js
 import express from "express";
 import {
   addCourse,
@@ -12,15 +11,18 @@ import { protectEducator } from "../middlewares/authMiddleware.js";
 
 const educatorRouter = express.Router();
 
-// add educator role
+// Add educator role
 educatorRouter.get("/update-role", updateRoleToEducator);
 
+// Add course
 educatorRouter.post(
   "/add-course",
-  upload.single("courseThumbnail"), 
+  upload.single("courseThumbnail"),
   protectEducator,
   addCourse
 );
+
+// Other routes
 educatorRouter.get("/courses", protectEducator, getEducatorCourses);
 educatorRouter.get("/dashboard", protectEducator, educatorDashboardData);
 educatorRouter.get("/enrolled-students", protectEducator, getEnrolledStudentsData);

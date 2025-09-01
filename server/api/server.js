@@ -33,23 +33,23 @@ app.use(
 app.use(express.json({ limit: "10mb" }));
 app.use(clerkMiddleware());
 
-// Initialize services once (cold-start safe)
+// -------------------- Initialization (cold-start safe) --------------------
 let isDBConnected = false;
 
 const initializeServicesOnce = async () => {
-  // Connect DB if not connected
   if (!isDBConnected) {
     await dbConnect();
     isDBConnected = true;
   }
-  // Cloudinary config (instant, no await needed)
-  connectCloudinary();
+  connectCloudinary(); // No await needed
 };
 
-// Run initialization at cold start
-initializeServicesOnce().catch((err) => console.error("Initialization failed:", err));
+// Run at cold start
+initializeServicesOnce().catch((err) =>
+  console.error("Initialization failed:", err)
+);
 
-// Middleware to ensure DB is connected (non-blocking)
+// Ensure DB is connected per request (non-blocking)
 app.use(async (req, res, next) => {
   if (!isDBConnected) {
     try {
@@ -64,9 +64,13 @@ app.use(async (req, res, next) => {
   next();
 });
 
-// Routes
+// -------------------- Routes --------------------
 app.get("/", (req, res) =>
-  res.json({ success: true, message: "Server is running", timestamp: new Date() })
+  res.json({
+    success: true,
+    message: "Server is running",
+    timestamp: new Date(),
+  })
 );
 
 app.use("/api/educator", educatorRouter);
@@ -78,7 +82,7 @@ app.get("/health", (req, res) =>
   res.json({ status: "OK", timestamp: new Date() })
 );
 
-// Error handling
+// -------------------- Error handling --------------------
 app.use((error, req, res, next) => {
   console.error(error.stack);
   if (error instanceof multer.MulterError) {
@@ -86,13 +90,13 @@ app.use((error, req, res, next) => {
       .status(400)
       .json({ success: false, message: `File upload error: ${error.message}` });
   }
-  res
-    .status(500)
-    .json({
-      success: false,
-      message:
-        process.env.NODE_ENV === "production" ? "Internal server error" : error.message,
-    });
+  res.status(500).json({
+    success: false,
+    message:
+      process.env.NODE_ENV === "production"
+        ? "Internal server error"
+        : error.message,
+  });
 });
 
 export default serverless(app);
