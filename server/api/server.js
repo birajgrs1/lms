@@ -1,7 +1,7 @@
 // server.js
 import express from "express";
 import dotenv from "dotenv";
-// import cors from "cors";
+import cors from "cors";
 import dbConnect from "../config/dbConnect.js";
 import { clerkWebHooks
 , stripeWebHooks 
@@ -35,12 +35,12 @@ const initializeServices = async () => {
 app.post("/stripe", express.raw({ type: "application/json" }), stripeWebHooks);
 
 // Middlewares
-// app.use(cors({
-//   origin: process.env.NODE_ENV === 'production' 
-//     ? ["https://lms-system-frontend-lilac.vercel.app"] 
-//     : ["http://localhost:5173"],
-//   credentials: true
-// }));
+app.use(cors({
+  origin: process.env.NODE_ENV === 'production' 
+    ? ["https://lms-frontend-gray-kappa.vercel.app/"] 
+    : ["http://localhost:5173"],
+  credentials: true
+}));
 app.use(clerkMiddleware());
 app.use(express.json());
 
