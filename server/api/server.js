@@ -38,10 +38,10 @@ const initializeServices = async () => {
   try {
     await dbConnect();
     await connectCloudinary();
-    console.log("✅ Services initialized");
+    console.log(" Services initialized");
     servicesInitialized = true;
   } catch (err) {
-    console.error("❌ Service initialization failed:", err.message);
+    console.error(" Service initialization failed:", err.message);
     throw err;
   }
 };
