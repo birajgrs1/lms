@@ -1,23 +1,23 @@
 import mongoose from "mongoose";
 
-let cached = global.mongoose;
-
-if (!cached) cached = global.mongoose = { conn: null, promise: null };
+let isConnected = false; // cached connection
 
 const connectDB = async () => {
-  if (cached.conn) return cached.conn;
+  if (isConnected) return;
 
-  if (!cached.promise) {
-    cached.promise = mongoose
-      .connect(process.env.MONGO_URI, { dbName: "lms-sys" })
-      .then((conn) => {
-        console.log(`✅ Database connected: ${conn.connection.host}`);
-        return conn;
-      });
+  if (mongoose.connection.readyState === 1) {
+    isConnected = true;
+    return;
   }
 
-  cached.conn = await cached.promise;
-  return cached.conn;
+  try {
+    const conn = await mongoose.connect(process.env.MONGO_URI, { dbName: "lms-sys" });
+    console.log(`✅ Database connected: ${conn.connection.host}`);
+    isConnected = true;
+  } catch (err) {
+    console.error("❌ DB connection error:", err.message);
+    throw err;
+  }
 };
 
 export default connectDB;

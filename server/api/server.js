@@ -12,7 +12,6 @@ import { clerkMiddleware } from "@clerk/express";
 import multer from "multer";
 
 dotenv.config();
-
 const app = express();
 
 // Webhooks (before body parsing)
@@ -33,10 +32,10 @@ app.use(
 app.use(express.json({ limit: "10mb" }));
 app.use(clerkMiddleware());
 
-// -------------------- Initialization (cold-start safe) --------------------
+// --- Lazy Initialization ---
 let isDBConnected = false;
 
-const initializeServicesOnce = async () => {
+const initializeServices = async () => {
   if (!isDBConnected) {
     await dbConnect();
     isDBConnected = true;
@@ -44,45 +43,30 @@ const initializeServicesOnce = async () => {
   connectCloudinary(); // No await needed
 };
 
-// Run at cold start
-initializeServicesOnce().catch((err) =>
-  console.error("Initialization failed:", err)
-);
-
-// Ensure DB is connected per request (non-blocking)
+// Middleware to ensure DB is connected
 app.use(async (req, res, next) => {
-  if (!isDBConnected) {
-    try {
-      await dbConnect();
-      isDBConnected = true;
-    } catch (err) {
-      return res
-        .status(503)
-        .json({ success: false, message: "Service temporarily unavailable" });
-    }
+  try {
+    await initializeServices();
+    next();
+  } catch (err) {
+    console.error("Service init error:", err);
+    res.status(503).json({ success: false, message: "Service temporarily unavailable" });
   }
-  next();
 });
 
-// -------------------- Routes --------------------
+// Routes
 app.get("/", (req, res) =>
-  res.json({
-    success: true,
-    message: "Server is running",
-    timestamp: new Date(),
-  })
+  res.json({ success: true, message: "Server is running", timestamp: new Date() })
 );
 
 app.use("/api/educator", educatorRouter);
 app.use("/api/course", courseRouter);
 app.use("/api/user", userRouter);
 
-// Health check
-app.get("/health", (req, res) =>
-  res.json({ status: "OK", timestamp: new Date() })
-);
+// Health check (fast)
+app.get("/health", (req, res) => res.json({ status: "OK", timestamp: new Date() }));
 
-// -------------------- Error handling --------------------
+// Error handling
 app.use((error, req, res, next) => {
   console.error(error.stack);
   if (error instanceof multer.MulterError) {
@@ -92,10 +76,7 @@ app.use((error, req, res, next) => {
   }
   res.status(500).json({
     success: false,
-    message:
-      process.env.NODE_ENV === "production"
-        ? "Internal server error"
-        : error.message,
+    message: process.env.NODE_ENV === "production" ? "Internal server error" : error.message,
   });
 });
 
