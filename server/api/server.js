@@ -13,7 +13,7 @@ import multer from "multer";
 dotenv.config();
 const app = express();
 
-// Initialize services once (for serverless, this runs per instance)
+// Initialize services only once
 let servicesInitialized = false;
 const initializeServices = async () => {
   if (servicesInitialized) return;
@@ -29,38 +29,32 @@ const initializeServices = async () => {
   }
 };
 
-// Initialize services at startup for serverless
-if (process.env.NODE_ENV === 'production') {
-  initializeServices().catch(console.error);
-}
-
+// Stripe webhook needs raw body
 app.post("/stripe", express.raw({ type: "application/json" }), stripeWebHooks);
 
 // Middlewares
 app.use(cors({
   origin: process.env.NODE_ENV === 'production' 
-    ? ["https://lms-frontend-gray-kappa.vercel.app"]
+    ? ["https://lms-frontend-gray-kappa.vercel.app"] 
     : ["http://localhost:5173"],
   credentials: true
 }));
 app.use(clerkMiddleware());
-app.use(express.json({ limit: '50mb' }));
-app.use(express.urlencoded({ extended: true, limit: '50mb' }));
+app.use(express.json({ limit: '10mb' }));
 
-// Initialize services on first request in development
-if (process.env.NODE_ENV !== 'production') {
-  app.use(async (req, res, next) => {
-    try {
-      await initializeServices();
-      next();
-    } catch (error) {
-      res.status(500).json({
-        success: false,
-        message: "Service initialization failed"
-      });
-    }
-  });
-}
+// Initialize services on first request
+app.use(async (req, res, next) => {
+  try {
+    await initializeServices();
+    next();
+  } catch (error) {
+    console.error("Service initialization error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Service initialization failed"
+    });
+  }
+});
 
 // Routes
 app.get("/", (req, res) => {
@@ -71,15 +65,6 @@ app.post("/clerk", clerkWebHooks);
 app.use("/api/educator", educatorRouter);
 app.use("/api/course", courseRouter);
 app.use("/api/user", userRouter);
-
-// Health check endpoint for Vercel
-app.get("/health", (req, res) => {
-  res.status(200).json({ 
-    status: "OK", 
-    timestamp: new Date().toISOString(),
-    environment: process.env.NODE_ENV || 'development'
-  });
-});
 
 // Error handling middleware
 app.use((error, req, res, next) => {

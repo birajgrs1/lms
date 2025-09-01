@@ -14,7 +14,8 @@ const AppContextProvider = ({ children }) => {
 
   const backendUrl = import.meta.env.PROD
     ? import.meta.env.VITE_BACKEND_URL_PROD
-    : import.meta.env.VITE_BACKEND_URL;
+    : import.meta.env.VITE_BACKEND_URL_DEV;
+    
   const { getToken } = useAuth();
   const { user } = useUser();
 
